@@ -15,6 +15,11 @@ apt_install \
 
 apt-get purge -qq -y owncloud*
 
+
+# Copy in a php5-pgsql configuration file
+sed "s#STORAGE_ROOT#$STORAGE_ROOT#" \
+  conf/pgsql.ini > /etc/php5/conf.d/pgsql.ini
+
 # Install ownCloud from source of this version:
 owncloud_ver=8.0.4
 owncloud_hash=625b1c561ea51426047a3e79eda51ca05e9f978a
