@@ -43,7 +43,8 @@ apt_get_quiet upgrade
 
 apt_install python3 python3-dev python3-pip \
 	wget curl git sudo coreutils bc \
-	haveged unattended-upgrades cron ntp fail2ban
+	haveged unattended-upgrades cron ntp fail2ban \
+	postgresql postgresql-contrib postgresql-client
 
 # Allow apt to install system updates automatically every day.
 

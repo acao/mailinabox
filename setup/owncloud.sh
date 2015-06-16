@@ -9,8 +9,9 @@ source /etc/mailinabox.conf # load global vars
 
 apt_install \
 	dbconfig-common \
-	php5-cli php5-sqlite php5-gd php5-imap php5-curl php-pear php-apc curl libapr1 libtool libcurl4-openssl-dev php-xml-parser \
-	php5 php5-dev php5-gd php5-fpm memcached php5-memcache unzip
+	php5-cli php5-gd php5-imap php5-curl php-pear php-apc curl libapr1 libtool libcurl4-openssl-dev php-xml-parser \
+	php5 php5-dev php5-gd php5-fpm memcached php5-memcache unzip \
+  postgresql postgresql-contrib postgresql-client php5-pgsql
 
 apt-get purge -qq -y owncloud*
 
@@ -69,11 +70,26 @@ if [ ! -d /usr/local/lib/owncloud/ ] \
 	hide_output sudo -u www-data php /usr/local/lib/owncloud/occ upgrade
 fi
 
+# ### Set up pgsql for owncloud
+
+pgdbname=owncloud
+pguser=owncloud
+pgpassword=$(dd if=/dev/random bs=1 count=40 2>/dev/null | sha1sum | fold -w 30 | head -n 1)
+
+
 # ### Configuring ownCloud
 
 # Setup ownCloud if the ownCloud database does not yet exist. Running setup when
 # the database does exist wipes the database and user data.
-if [ ! -f $STORAGE_ROOT/owncloud/owncloud.db ]; then
+if [ ! psql -hlocalhost -Upostgres -lqt | cut -d \| -f 1 | grep -w $pgdbname ]; then
+
+psql -hlocalhost -Upostgres <<EOF
+  CREATE USER $pguser WITH PASSWORD '$pgpassword';
+  CREATE DATABASE $pgdbname TEMPLATE template0 ENCODING 'UNICODE';
+  ALTER DATABASE $pgdbname OWNER TO $pguser;
+  GRANT ALL PRIVILEGES ON DATABASE $pgdbname TO $pguser;
+EOF
+
 	# Create user data directory
 	mkdir -p $STORAGE_ROOT/owncloud
 
@@ -122,12 +138,17 @@ EOF
 	# when the install script is run. Make an administrator account
 	# here or else the install can't finish.
 	adminpassword=$(dd if=/dev/random bs=1 count=40 2>/dev/null | sha1sum | fold -w 30 | head -n 1)
+
 	cat > /usr/local/lib/owncloud/config/autoconfig.php <<EOF;
 <?php
 \$AUTOCONFIG = array (
   # storage/database
   'directory' => '$STORAGE_ROOT/owncloud',
-  'dbtype' => 'sqlite3',
+  "dbtype"        => "pgsql",
+  "dbname"        => "$pgdbname",
+  "dbuser"        => "$pguser",
+  "dbpassword"    => "$pgpassword",
+  "dbhost"        => "localhost"
 
   # create an administrator account with a random password so that
   # the user does not have to enter anything on first load of ownCloud
@@ -136,6 +157,7 @@ EOF
 );
 ?>
 EOF
+
 
 	# Set permissions
 	chown -R www-data.www-data $STORAGE_ROOT/owncloud /usr/local/lib/owncloud
