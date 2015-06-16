@@ -1,5 +1,12 @@
-Mail-in-a-Box
+Mail-in-a-Box (fork)
 =============
+
+This is a fork of Mail-in-a-box that:
+
+[x] Overrides default roundcube theme to use 'larry'
+[ ] Uses pgsql for owncloud (in progress)
+[ ] Uses pgsql for other storage (dovecot, etc)
+[ ] Provides an xmpp server with converse.js roundcube plugin
 
 By [@JoshData](https://github.com/JoshData) and [contributors](https://github.com/mail-in-a-box/mailinabox/graphs/contributors).
 
